@@ -9,9 +9,6 @@
     <!-- Tailwind CSS v3 via CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- FingerprintJS -->
-    <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@4/dist/fp.min.js"></script>
-
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
@@ -107,6 +104,15 @@
                 id="checked-date"></span>
         </div>
 
+        <!-- Session Cooldown State -->
+        <div id="state-cooldown" class="hidden-state flex flex-col items-center py-6 text-center">
+            <div class="w-16 h-16 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center mb-4">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </div>
+            <h2 class="text-lg font-bold text-gray-900 mb-2">Please Wait</h2>
+            <p class="text-sm text-gray-600 mb-4" id="cooldown-message"></p>
+        </div>
+
         <!-- 4. Form State -->
         <div id="state-form" class="hidden-state fade-enter-active">
             <div
@@ -168,6 +174,7 @@
             loading: document.getElementById('state-loading'),
             error: document.getElementById('state-error'),
             checkedIn: document.getElementById('state-checked-in'),
+            cooldown: document.getElementById('state-cooldown'),
             form: document.getElementById('state-form'),
             success: document.getElementById('state-success')
         };
@@ -208,7 +215,7 @@
 
                 // If scanned code is older than 20 seconds
                 if (timeDiff > CONFIG.MAX_QR_AGE_MS) {
-                    showError('QR Code Expired', 'Please scan the live code on the main screen.');
+                    showError('QR Code Expired', 'This QR has expired. Please scan the latest code on the screen.');
                     return false;
                 }
 
@@ -226,16 +233,32 @@
 
         // 2. Main Flow
         const init = async () => {
+            // Local Session Block (60 minutes)
+            const lastTime = localStorage.getItem('last_attendance_time');
+            if (lastTime) {
+                const diffMs = Date.now() - parseInt(lastTime, 10);
+                const diffMinutes = Math.floor(diffMs / 60000);
+                
+                if (diffMinutes < 60) {
+                    const remaining = 60 - diffMinutes;
+                    document.getElementById('cooldown-message').textContent = `You have already checked in recently. Please wait ${remaining} minutes before scanning again.`;
+                    showState('cooldown');
+                    return; // Stop flow entirely
+                }
+            }
+
             if (!verifyToken()) return;
 
             document.getElementById('loading-text').textContent = 'Verifying device...';
             const today = getTodayDate();
 
             try {
-                // Get Fingerprint
-                const fp = await FingerprintJS.load();
-                const result = await fp.get();
-                const userGuid = result.visitorId;
+                // localStorage fingerprint check
+                let userGuid = localStorage.getItem('constructx_device_id');
+                if (!userGuid) {
+                    userGuid = 'dev_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+                    localStorage.setItem('constructx_device_id', userGuid);
+                }
 
                 // Check Backend
                 const exists = await checkExistingRecord(userGuid, today);
@@ -299,6 +322,9 @@
                     });
 
                     if (!res.ok) throw new Error('API Error');
+
+                    // Mark successful submission in session
+                    localStorage.setItem('last_attendance_time', Date.now().toString());
 
                     document.getElementById('success-message').textContent = `Welcome, ${name}!`;
                     document.getElementById('success-time').textContent = new Date().toLocaleTimeString();
