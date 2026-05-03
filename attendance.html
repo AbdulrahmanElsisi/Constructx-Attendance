@@ -287,6 +287,9 @@
             try {
                 const res = await fetch(CONFIG.API_URL, {
                     method: 'POST',
+                    headers: {
+                        'Content-Type': 'text/plain;charset=utf-8',
+                    },
                     body: JSON.stringify({ action: 'check', fingerprint: userGuid, date: date })
                 });
                 const data = await res.json();
@@ -318,10 +321,16 @@
                     // Real Submit Call
                     const res = await fetch(CONFIG.API_URL, {
                         method: 'POST',
+                        headers: {
+                            'Content-Type': 'text/plain;charset=utf-8',
+                        },
                         body: JSON.stringify({ action: 'submit', name: name, fingerprint: userGuid, date: todayDate })
                     });
 
-                    if (!res.ok) throw new Error('API Error');
+                    if (!res.ok) {
+                        const text = await res.text();
+                        throw new Error(`API returned ${res.status}: ${text}`);
+                    }
 
                     // Mark successful submission in session
                     localStorage.setItem('last_attendance_time', Date.now().toString());
@@ -331,7 +340,8 @@
                     showState('success');
 
                 } catch (err) {
-                    alert('Submission failed. Please try again.');
+                    console.error('Submit Error:', err);
+                    alert(`Submission failed. ${err.message}`);
                     submitBtn.disabled = false;
                     btnText.textContent = 'Check In Now';
                     btnSpinner.classList.add('hidden');
