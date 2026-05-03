@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ConstructX - Attendance Check-In</title>
+
+    <!-- Tailwind CSS v3 via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- FingerprintJS -->
+    <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@4/dist/fp.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            900: '#1e3a8a',
+                            950: '#172554',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .fade-enter {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        .fade-enter-active {
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 400ms, transform 400ms;
+        }
+
+        .hidden-state {
+            display: none !important;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 text-gray-900 min-h-screen flex flex-col items-center justify-center p-6 relative">
+
+    <main
+        class="w-full max-w-md bg-white rounded-3xl p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 relative overflow-hidden">
+
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <div
+                class="w-16 h-16 bg-gradient-to-tr from-brand-600 to-blue-400 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z">
+                    </path>
+                </svg>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-900">ConstructX</h1>
+            <p class="text-sm text-gray-500 font-medium mt-1">Daily Attendance</p>
+        </div>
+
+        <!-- 1. Loading State -->
+        <div id="state-loading" class="flex flex-col items-center py-8 text-center">
+            <svg class="animate-spin h-10 w-10 text-brand-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none"
+                viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                </path>
+            </svg>
+            <p class="text-gray-600 font-medium" id="loading-text">Verifying secure token...</p>
+        </div>
+
+        <!-- 2. Error / Expired State -->
+        <div id="state-error" class="hidden-state flex flex-col items-center py-6 text-center">
+            <div class="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mb-4">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+            <h2 class="text-lg font-bold text-gray-900 mb-2" id="error-title">Verification Failed</h2>
+            <p class="text-sm text-gray-600" id="error-message">QR Code Expired. Please scan the live code.</p>
+        </div>
+
+        <!-- 3. Already Checked In State -->
+        <div id="state-checked-in" class="hidden-state flex flex-col items-center py-6 text-center">
+            <div class="w-16 h-16 bg-green-100 text-green-500 rounded-full flex items-center justify-center mb-4">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+            </div>
+            <h2 class="text-lg font-bold text-gray-900 mb-2">All Set!</h2>
+            <p class="text-sm text-gray-600 mb-4">You have already checked in for today.</p>
+            <span class="px-4 py-1.5 bg-gray-100 text-gray-700 rounded-full text-sm font-semibold"
+                id="checked-date"></span>
+        </div>
+
+        <!-- 4. Form State -->
+        <div id="state-form" class="hidden-state fade-enter-active">
+            <div
+                class="bg-blue-50 text-brand-600 px-4 py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2 mb-6">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+                    </path>
+                </svg>
+                <span id="form-date-display"></span>
+            </div>
+
+            <form id="attendance-form" class="space-y-5">
+                <div>
+                    <label for="name" class="block text-sm font-semibold text-gray-700 mb-1.5">Full Name</label>
+                    <input type="text" id="name" required placeholder="e.g. Jane Doe"
+                        class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all text-gray-900 placeholder-gray-400 font-medium">
+                </div>
+
+                <button type="submit" id="submit-btn"
+                    class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3.5 px-4 rounded-xl transition-colors shadow-lg shadow-brand-500/30 flex justify-center items-center">
+                    <span id="btn-text">Check In Now</span>
+                    <svg id="btn-spinner" class="animate-spin ml-2 h-5 w-5 text-white hidden"
+                        xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                        </circle>
+                        <path class="opacity-75" fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                        </path>
+                    </svg>
+                </button>
+            </form>
+        </div>
+
+        <!-- 5. Success State -->
+        <div id="state-success" class="hidden-state flex flex-col items-center py-6 text-center fade-enter-active">
+            <div
+                class="w-20 h-20 bg-gradient-to-tr from-green-400 to-emerald-500 text-white rounded-full flex items-center justify-center mb-5 shadow-lg shadow-green-500/30">
+                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
+                </svg>
+            </div>
+            <h2 class="text-xl font-bold text-gray-900 mb-2">Checked In Successfully!</h2>
+            <p class="text-gray-600 mb-1" id="success-message">Welcome to ConstructX</p>
+            <p class="text-sm text-gray-400 font-medium" id="success-time"></p>
+        </div>
+
+    </main>
+
+    <!-- Config & Logic -->
+    <script>
+        // Update these Webhook URLs
+        const CONFIG = {
+            API_URL: 'https://script.google.com/macros/s/AKfycbw6YFdNiQT9l8bsi7w_hVP5apvuv_EK6SvhUira4eEyIFibgUWOCuzc2E6VsyPyahIJ/exec',
+            MAX_QR_AGE_MS: 20000 // 20 seconds
+        };
+
+        const states = {
+            loading: document.getElementById('state-loading'),
+            error: document.getElementById('state-error'),
+            checkedIn: document.getElementById('state-checked-in'),
+            form: document.getElementById('state-form'),
+            success: document.getElementById('state-success')
+        };
+
+        const getTodayDate = () => {
+            const now = new Date();
+            return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        };
+
+        const showState = (stateName) => {
+            Object.values(states).forEach(el => el.classList.add('hidden-state'));
+            states[stateName].classList.remove('hidden-state');
+        };
+
+        const showError = (title, message) => {
+            document.getElementById('error-title').textContent = title;
+            document.getElementById('error-message').textContent = message;
+            showState('error');
+        };
+
+        // 1. Verify URL Token
+        const verifyToken = () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+
+            if (!token) {
+                showError('Invalid Link', 'No security token found in the URL. Please scan the QR code again.');
+                return false;
+            }
+
+            try {
+                const decodedStr = atob(token);
+                const timestamp = parseInt(decodedStr, 10);
+
+                if (isNaN(timestamp)) throw new Error('Invalid timestamp');
+
+                const timeDiff = Date.now() - timestamp;
+
+                // If scanned code is older than 20 seconds
+                if (timeDiff > CONFIG.MAX_QR_AGE_MS) {
+                    showError('QR Code Expired', 'Please scan the live code on the main screen.');
+                    return false;
+                }
+
+                // If the token is somehow in the future (client clock drift)
+                if (timeDiff < -5000) {
+                    console.warn('Timestamp is in the future. Proceeding cautiously.');
+                }
+
+                return true;
+            } catch (err) {
+                showError('Invalid Token', 'The security token is malformed.');
+                return false;
+            }
+        };
+
+        // 2. Main Flow
+        const init = async () => {
+            if (!verifyToken()) return;
+
+            document.getElementById('loading-text').textContent = 'Verifying device...';
+            const today = getTodayDate();
+
+            try {
+                // Get Fingerprint
+                const fp = await FingerprintJS.load();
+                const result = await fp.get();
+                const userGuid = result.visitorId;
+
+                // Check Backend
+                const exists = await checkExistingRecord(userGuid, today);
+
+                if (exists) {
+                    document.getElementById('checked-date').textContent = new Date().toLocaleDateString();
+                    showState('checkedIn');
+                } else {
+                    document.getElementById('form-date-display').textContent = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+                    showState('form');
+                    setupForm(userGuid, today);
+                }
+
+            } catch (err) {
+                console.error(err);
+                // If backend check fails, fail open (allow check-in) or fail closed. 
+                // We'll let them see the form, but in production you might want to show an error.
+                document.getElementById('form-date-display').textContent = new Date().toLocaleDateString();
+                showState('form');
+                setupForm('fallback_guid', today);
+            }
+        };
+
+        // Real Webhook Check
+        const checkExistingRecord = async (userGuid, date) => {
+            try {
+                const res = await fetch(CONFIG.API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'check', fingerprint: userGuid, date: date })
+                });
+                const data = await res.json();
+                return data.exists;
+            } catch (e) {
+                throw e;
+            }
+        };
+
+        // 3. Handle Form Submission
+        const setupForm = (userGuid, todayDate) => {
+            const form = document.getElementById('attendance-form');
+            const btnText = document.getElementById('btn-text');
+            const btnSpinner = document.getElementById('btn-spinner');
+            const submitBtn = document.getElementById('submit-btn');
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const name = document.getElementById('name').value.trim();
+
+                if (!name) return;
+
+                // UI Loading
+                submitBtn.disabled = true;
+                btnText.textContent = 'Submitting...';
+                btnSpinner.classList.remove('hidden');
+
+                try {
+                    // Real Submit Call
+                    const res = await fetch(CONFIG.API_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({ action: 'submit', name: name, fingerprint: userGuid, date: todayDate })
+                    });
+
+                    if (!res.ok) throw new Error('API Error');
+
+                    document.getElementById('success-message').textContent = `Welcome, ${name}!`;
+                    document.getElementById('success-time').textContent = new Date().toLocaleTimeString();
+                    showState('success');
+
+                } catch (err) {
+                    alert('Submission failed. Please try again.');
+                    submitBtn.disabled = false;
+                    btnText.textContent = 'Check In Now';
+                    btnSpinner.classList.add('hidden');
+                }
+            });
+        };
+
+        // Start
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+
+</html>

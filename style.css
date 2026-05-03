@@ -1,0 +1,596 @@
+/* ============================================
+   ConstructX Attendance — Design System
+   ============================================ */
+
+:root {
+    /* Brand palette */
+    --primary-h: 225;
+    --primary-s: 73%;
+    --primary-l: 57%;
+    --primary: hsl(var(--primary-h), var(--primary-s), var(--primary-l));
+    --primary-light: hsl(var(--primary-h), 80%, 65%);
+    --primary-dark: hsl(var(--primary-h), 70%, 45%);
+    --primary-glow: hsla(var(--primary-h), 80%, 60%, 0.35);
+
+    --accent-h: 160;
+    --accent: hsl(var(--accent-h), 65%, 50%);
+    --accent-light: hsl(var(--accent-h), 70%, 60%);
+
+    /* Surfaces */
+    --bg-deep: hsl(228, 28%, 8%);
+    --bg-card: hsl(228, 22%, 12%);
+    --bg-card-hover: hsl(228, 22%, 14%);
+    --bg-input: hsl(228, 20%, 16%);
+    --bg-input-focus: hsl(228, 22%, 18%);
+
+    /* Borders */
+    --border-subtle: hsla(225, 20%, 50%, 0.12);
+    --border-focus: hsla(var(--primary-h), 70%, 60%, 0.5);
+
+    /* Text */
+    --text-primary: hsl(220, 20%, 95%);
+    --text-secondary: hsl(220, 15%, 65%);
+    --text-muted: hsl(220, 12%, 45%);
+
+    /* Status */
+    --success: hsl(152, 60%, 48%);
+    --success-bg: hsla(152, 60%, 48%, 0.1);
+    --error: hsl(0, 72%, 60%);
+    --error-bg: hsla(0, 72%, 60%, 0.1);
+
+    /* Spacing & Radius */
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 22px;
+    --radius-xl: 28px;
+
+    /* Shadows */
+    --shadow-card: 0 4px 32px hsla(228, 40%, 4%, 0.5),
+                   0 1px 4px hsla(228, 40%, 4%, 0.3);
+    --shadow-btn: 0 4px 16px var(--primary-glow);
+    --shadow-input: 0 2px 8px hsla(228, 40%, 4%, 0.2);
+
+    /* Transitions */
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --duration-fast: 200ms;
+    --duration-normal: 350ms;
+    --duration-slow: 600ms;
+}
+
+/* ============================================
+   Reset & Base
+   ============================================ */
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow-x: hidden;
+    position: relative;
+}
+
+/* ============================================
+   Background Particles
+   ============================================ */
+.bg-particles {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+}
+
+.particle {
+    position: absolute;
+    border-radius: 50%;
+    background: var(--primary);
+    opacity: 0.04;
+    animation: float-particle linear infinite;
+}
+
+.particle:nth-child(1) {
+    width: 300px; height: 300px;
+    top: -10%; left: -5%;
+    animation-duration: 25s;
+}
+.particle:nth-child(2) {
+    width: 200px; height: 200px;
+    top: 60%; right: -8%;
+    animation-duration: 30s;
+    animation-delay: -5s;
+}
+.particle:nth-child(3) {
+    width: 150px; height: 150px;
+    bottom: 10%; left: 20%;
+    animation-duration: 20s;
+    animation-delay: -10s;
+    background: var(--accent);
+}
+.particle:nth-child(4) {
+    width: 250px; height: 250px;
+    top: 20%; right: 15%;
+    animation-duration: 35s;
+    animation-delay: -8s;
+}
+.particle:nth-child(5) {
+    width: 180px; height: 180px;
+    top: 50%; left: 50%;
+    animation-duration: 28s;
+    animation-delay: -15s;
+    background: var(--accent);
+    opacity: 0.03;
+}
+.particle:nth-child(6) {
+    width: 120px; height: 120px;
+    top: 80%; right: 30%;
+    animation-duration: 22s;
+    animation-delay: -3s;
+}
+
+@keyframes float-particle {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    25% { transform: translate(40px, -60px) scale(1.1); }
+    50% { transform: translate(-30px, 40px) scale(0.95); }
+    75% { transform: translate(50px, 20px) scale(1.05); }
+}
+
+/* ============================================
+   Layout
+   ============================================ */
+.container {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 440px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+}
+
+/* ============================================
+   Card
+   ============================================ */
+.card {
+    width: 100%;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-xl);
+    padding: 40px 32px;
+    box-shadow: var(--shadow-card);
+    backdrop-filter: blur(20px);
+    animation: card-enter var(--duration-slow) var(--ease-out) both;
+    position: relative;
+    overflow: hidden;
+}
+
+.card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        hsla(var(--primary-h), 70%, 65%, 0.3),
+        transparent
+    );
+}
+
+@keyframes card-enter {
+    from {
+        opacity: 0;
+        transform: translateY(24px) scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* ============================================
+   Card Header
+   ============================================ */
+.card-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.logo-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    border-radius: var(--radius-md);
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 20px var(--primary-glow);
+    animation: logo-pulse 3s ease-in-out infinite;
+}
+
+@keyframes logo-pulse {
+    0%, 100% { box-shadow: 0 4px 20px var(--primary-glow); }
+    50% { box-shadow: 0 4px 32px hsla(var(--primary-h), 80%, 60%, 0.5); }
+}
+
+.card-header h1 {
+    font-size: 1.75rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    background: linear-gradient(135deg, var(--text-primary), var(--primary-light));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 4px;
+}
+
+.subtitle {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    letter-spacing: 0.02em;
+}
+
+/* ============================================
+   State Sections
+   ============================================ */
+.state-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    animation: fade-in var(--duration-normal) var(--ease-out) both;
+}
+
+.state-section.hidden {
+    display: none;
+}
+
+@keyframes fade-in {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.state-message {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    text-align: center;
+    line-height: 1.5;
+}
+
+/* ============================================
+   Loading Spinner
+   ============================================ */
+.spinner-container {
+    padding: 12px;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--border-subtle);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ============================================
+   Status Icons
+   ============================================ */
+.status-icon {
+    color: var(--success);
+    animation: fade-in var(--duration-normal) var(--ease-out) both;
+}
+
+.status-icon.pop-in {
+    animation: pop-in var(--duration-slow) var(--ease-spring) both;
+}
+
+.error-icon {
+    color: var(--error);
+}
+
+@keyframes pop-in {
+    from {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* SVG animations for checkmark */
+.circle-animate {
+    animation: draw-circle 0.8s var(--ease-out) 0.2s both;
+}
+
+.check-animate {
+    animation: draw-check 0.4s var(--ease-out) 0.7s both;
+}
+
+@keyframes draw-circle {
+    from { stroke-dashoffset: 163; }
+    to { stroke-dashoffset: 0; }
+}
+
+@keyframes draw-check {
+    from {
+        stroke-dasharray: 40;
+        stroke-dashoffset: 40;
+    }
+    to {
+        stroke-dasharray: 40;
+        stroke-dashoffset: 0;
+    }
+}
+
+/* ============================================
+   Date Badge
+   ============================================ */
+.date-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 100px;
+    background: hsla(var(--primary-h), 50%, 50%, 0.1);
+    border: 1px solid hsla(var(--primary-h), 50%, 50%, 0.15);
+    color: var(--primary-light);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+}
+
+/* ============================================
+   Date Display (Form)
+   ============================================ */
+.date-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: hsla(var(--primary-h), 30%, 50%, 0.08);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    font-weight: 500;
+    width: 100%;
+    margin-bottom: 4px;
+}
+
+.date-display svg {
+    color: var(--primary-light);
+    flex-shrink: 0;
+}
+
+/* ============================================
+   Form
+   ============================================ */
+#attendance-form {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.input-group label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 14px 16px;
+    background: var(--bg-input);
+    border: 1.5px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all var(--duration-fast) var(--ease-out);
+    box-shadow: var(--shadow-input);
+    outline: none;
+}
+
+.input-group input::placeholder {
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+.input-group input:hover {
+    background: var(--bg-input-focus);
+    border-color: hsla(var(--primary-h), 50%, 50%, 0.25);
+}
+
+.input-group input:focus {
+    background: var(--bg-input-focus);
+    border-color: var(--border-focus);
+    box-shadow: var(--shadow-input), 0 0 0 3px hsla(var(--primary-h), 70%, 60%, 0.12);
+}
+
+/* ============================================
+   Buttons
+   ============================================ */
+.btn-primary {
+    width: 100%;
+    padding: 15px 24px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-out);
+    box-shadow: var(--shadow-btn);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-primary::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, transparent, hsla(0, 0%, 100%, 0.1));
+    opacity: 0;
+    transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+.btn-primary:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 24px var(--primary-glow);
+}
+
+.btn-primary:hover:not(:disabled)::before {
+    opacity: 1;
+}
+
+.btn-primary:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px var(--primary-glow);
+}
+
+.btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-text,
+.btn-loading {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-loading.hidden {
+    display: none;
+}
+
+.btn-spinner {
+    animation: spin 0.7s linear infinite;
+}
+
+.btn-secondary {
+    padding: 12px 28px;
+    border: 1.5px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-out);
+}
+
+.btn-secondary:hover {
+    background: hsla(var(--primary-h), 30%, 50%, 0.08);
+    border-color: hsla(var(--primary-h), 50%, 50%, 0.25);
+    color: var(--text-primary);
+}
+
+/* ============================================
+   Success Title
+   ============================================ */
+.success-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, var(--success), var(--accent-light));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* ============================================
+   Error Message
+   ============================================ */
+.error-message {
+    color: var(--error) !important;
+}
+
+/* ============================================
+   Footer
+   ============================================ */
+.footer {
+    text-align: center;
+}
+
+.footer p {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    letter-spacing: 0.02em;
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
+@media (max-width: 480px) {
+    .container {
+        padding: 16px;
+    }
+
+    .card {
+        padding: 32px 24px;
+        border-radius: var(--radius-lg);
+    }
+
+    .card-header h1 {
+        font-size: 1.5rem;
+    }
+
+    .logo-mark {
+        width: 56px;
+        height: 56px;
+    }
+}
+
+/* ============================================
+   Reduced Motion
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
